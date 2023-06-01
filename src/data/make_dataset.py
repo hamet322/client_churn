@@ -2,13 +2,14 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.pylab import rcParams
-import seaborn as sns
+#import seaborn as sns
 import numpy as np
 from datetime import datetime
 import os
+from sklearn.model_selection import train_test_split
 
 def read_file(filename):
-    df = pd.read_csv(os.path.join("./Data/", filename))
+    df = pd.read_csv(os.path.join("C:/Users/ecolg/Python/Git/client_churn/data/raw/", filename))
     return df
 
 def convert_months(refer_date,clean_df,column):
@@ -16,15 +17,17 @@ def convert_months(refer_date,clean_df,column):
     months=(time_delta/np.timedelta64(1,'M')).astype(int)
     return months
 
+price = read_file("price_data.csv")
+df_client = read_file("client_data.csv")
+
 def client_preparation(df):
     df_client[['date_activ','date_end','date_modif_prod','date_renewal']] = df_client[['date_activ','date_end','date_modif_prod','date_renewal']].apply(pd.to_datetime)
     df_client['has_gas'].replace({'f':0, 't':1}, inplace = True)
     return df_client
 
-client_data = read_file("client_data.csv")
-df_client = client_preparation(client_data)
 
-price = read_file("price_data.csv")
+df_client = client_preparation(df_client)
+
 
 def price_preparation(df):
        
@@ -184,22 +187,30 @@ def price_preparation(df):
     clean_df['forecast_price_pow_off_peak']=np.log10(clean_df['forecast_price_pow_off_peak']+1)
     
     clean_df=clean_df.drop(columns=["margin_net_pow_ele", "num_years_antig","months_activ"])
-    
+  
     print("Transformacion de datos completa")
     return clean_df
 
 def data_exporting(df, filename):
-    df.to_excel(os.path.join('./procesado/', filename))
+    df.to_csv(os.path.join('C:/Users/ecolg/Python/Git/client_churn/data/processed/', filename), index = False)
     print(filename, 'exportado correctamente en la carpeta processed')
 
 
       # Generamos las matrices de datos que se necesitan para la implementación
 
+
+# Matriz de Entrenamiento
+df1 = read_file('price_data.csv')
+tdf1 = price_preparation(df1)
+data_exporting(tdf1,'clean.csv')
+
 def main():
-    # Matriz de Entrenamiento
-    df1 = read_price('price_data.csv')
-    tdf1 = price_preparation(df1)
-    data_exporting(tdf1,'train.xlsx')
+    df2 = pd.read_csv(os.path.join("C:/Users/ecolg/Python/Git/client_churn/data/processed/clean.csv"))
+    df_train, df_test = train_test_split(df2, test_size = 0.25, random_state=42)
+    df_train, df_val = train_test_split(df_train, test_size = 0.45, random_state=42)
+    data_exporting(df_train, "raw_t.csv")
+    data_exporting(df_val, "raw_v.csv")
+    data_exporting(df_test, "raw_s.csv")
         
 if __name__ == "__main__":
     main()
